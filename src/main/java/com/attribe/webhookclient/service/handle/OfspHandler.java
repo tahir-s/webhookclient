@@ -65,7 +65,7 @@ public class OfspHandler implements  ClientHandle{
 			messageDto.setTo(message.getFrom());
 			
 			messageDto.setBody("""
-                                           Welcom to The Workplace, press *M* for main menu. 
+                                           Welcom to Orphan Finance Support Program *(OFSP)* of Alkhidmat, press *M* for main menu. 
                                            
                                            \ud83d\udd22 *Options*
                                            
