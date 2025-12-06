@@ -23,7 +23,7 @@ import com.attribe.webhookclient.service.handle.ClientHandlerFactory;
 @RestController
 @RequestMapping("/webhook")
 public class WhatsAppWebhookController {
-    private final String VERIFY_TOKEN = "EAAhSNCaW3poBQM8Knp2AUuSduSj0QjwQ74NcD5UCZBs3CZB1UhDbsQDg9xnotorY7iqzYsCT38X7PinatB3CxZCGPC0FZAG7gyGu0vC89ruPvvhbRHJgEmTGTIwoOeEM1spgwgrZAxTUQrTqus4N5VpY5367TIIkgw2EDZCYGa4uRRnCgEvx25IswHbKvJILRL5YKY3KVWAZAG6ZBGUcItQTyZAU1iBdCZBncJ1F44KYNbhK3fPmhyBOm3G8M7QhVCSm7rcVgDn8f7QPPBxFmpbujZC5wZDZD"; // your custom token
+    private final String VERIFY_TOKEN = "EAAhSNCaW3poBQKBfDFWZAo2HkEZCkldxwA6Orun8IS7PU8aSlsUXKqxaYEziTFdT5xgsZBRNHFZBmsaSxjatDBfOiP6mIGVBFu17CEK2rBZCDSjbFRHR3IjyaE0pRDmY5Fm3n1Tk1BbSMfOQvQLWUnDsosJuayjZCkVQzG3bDdbGXySTiUbtBQR5XngYBmOvVoOu7biJiwNtR82hhYpPOF4jOVm0BwWgjhrgLmmP7ryvJ5ZCn6Gq9XLgJAaR2CEono8ZCZCYumxzouZCXiUCElCeNAXAZDZD"; // your custom token
     
     @Autowired
     private ClientHandlerFactory factory;
