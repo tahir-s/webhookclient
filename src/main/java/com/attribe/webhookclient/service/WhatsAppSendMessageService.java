@@ -19,6 +19,10 @@ public class WhatsAppSendMessageService {
 	
 	@Value("${whatsapp.api.url}")
     private String apiUrl;
+
+
+    String accessToken = "EAAhSNCaW3poBQM8Knp2AUuSduSj0QjwQ74NcD5UCZBs3CZB1UhDbsQDg9xnotorY7iqzYsCT38X7PinatB3CxZCGPC0FZAG7gyGu0vC89ruPvvhbRHJgEmTGTIwoOeEM1spgwgrZAxTUQrTqus4N5VpY5367TIIkgw2EDZCYGa4uRRnCgEvx25IswHbKvJILRL5YKY3KVWAZAG6ZBGUcItQTyZAU1iBdCZBncJ1F44KYNbhK3fPmhyBOm3G8M7QhVCSm7rcVgDn8f7QPPBxFmpbujZC5wZDZD";
+		
 	
 	public String sendMessage() {
 		
@@ -26,11 +30,17 @@ public class WhatsAppSendMessageService {
 	}
 	
 	public String sendMessage(ClientDTO cleint, MessageDTO message) throws Exception {
+		return sendMessage(cleint.getPhoneNumberId(), message);
+	
+	}
+
+
+
+    public String sendMessage(String phoneNumberId, MessageDTO message) throws Exception {
 		
-		String accessToken = "EAAUnvBJjQBsBPMWPSUK5hBAxdco7hztR1BmqjHZAJByotZA5k4AfDSeoIHrW6Eq94tiAjurSRo9cPY1ZC5djadv3tw43sey3hVQzwZAOFt5abDif6G81eAh7VHz1IVykRk9UXQCZCfmima2f2WdJmCzjGtwAB6nr80PbHo01DlZBSHSK0EVkl6XhZAayzNszw7ZBCN042ip9ZBCzRrZCqCYJhtYrWC7RDGrOs1CimhZCukUKDYZD";
 		
 		RestTemplate restTemplate = new RestTemplate();
-		String url = String.format("%s/%s/messages", apiUrl, cleint.getPhoneNumberId());
+		String url = String.format("%s/%s/messages", apiUrl, phoneNumberId);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
@@ -55,5 +65,6 @@ public class WhatsAppSendMessageService {
 		
 	
 	}
+
 
 }

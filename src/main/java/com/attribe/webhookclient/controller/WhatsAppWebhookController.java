@@ -2,6 +2,7 @@ package com.attribe.webhookclient.controller;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,12 +17,17 @@ import com.attribe.webhookclient.pojo.whatsapp.Entry;
 import com.attribe.webhookclient.pojo.whatsapp.Message;
 import com.attribe.webhookclient.pojo.whatsapp.Value;
 import com.attribe.webhookclient.pojo.whatsapp.WebhookPayload;
+import com.attribe.webhookclient.service.handle.ClientHandle;
+import com.attribe.webhookclient.service.handle.ClientHandlerFactory;
 
 @RestController
 @RequestMapping("/webhook")
 public class WhatsAppWebhookController {
-    private final String VERIFY_TOKEN = "EAAUnvBJjQBsBP5u5ZB74QG8zoouX7ZBaAAwaZC9UNhFuIZA4Q2qIdehddQVWguHhZAyqPLxJP9y6VTnrWnkccrt6BcBdfgkKZBgTQK7x6cPdsM5nEraWh7btrVNsyu9XgBFNT7HwUvoistOkFoCinzYe17jFxmdq8SsZCZBUwGA8DMtmn1mqLU0hh6MuqxZBT1FUMfJ2LmZBy4FKannw31gpNfhqFU6515Cfc5of1NTMxIW2k5"; // your custom token
+    private final String VERIFY_TOKEN = "EAAhSNCaW3poBQM8Knp2AUuSduSj0QjwQ74NcD5UCZBs3CZB1UhDbsQDg9xnotorY7iqzYsCT38X7PinatB3CxZCGPC0FZAG7gyGu0vC89ruPvvhbRHJgEmTGTIwoOeEM1spgwgrZAxTUQrTqus4N5VpY5367TIIkgw2EDZCYGa4uRRnCgEvx25IswHbKvJILRL5YKY3KVWAZAG6ZBGUcItQTyZAU1iBdCZBncJ1F44KYNbhK3fPmhyBOm3G8M7QhVCSm7rcVgDn8f7QPPBxFmpbujZC5wZDZD"; // your custom token
     
+    @Autowired
+    private ClientHandlerFactory factory;
+   
     // STEP 1: Verification Endpoint
     @GetMapping()
     public ResponseEntity<String> verifyWebhook(
@@ -58,6 +64,20 @@ public class WhatsAppWebhookController {
                             String from = message.getFrom();
                             String text = message.getText() != null ? message.getText().getBody() : null;
                             System.out.println("Received message from " + from + ": " + text);
+
+                            try {
+                                
+                                ClientHandle handle = factory.getHandler("OfspHandler");
+                                if(handle!=null){
+                                    handle.handleInbondMessage(value.getMetadata(), message);
+                                }
+                                
+                            } catch (Exception e) {
+                                System.err.println(e.getMessage());
+                            }
+
+
+
                         }
                     }
                 }
