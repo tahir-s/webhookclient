@@ -62,7 +62,7 @@ public class WhatsAppSendMessageService {
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
        
-        System.out.println(messagePayload.toString());
+       // System.out.println(messagePayload.toString());
        System.out.println("WhatsAppSendMessageService.sendMessage -------------------- [END]");
 		
         return response.getBody();

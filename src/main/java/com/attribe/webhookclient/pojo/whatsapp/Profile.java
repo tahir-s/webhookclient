@@ -13,7 +13,7 @@ public class Profile {
 	
 	@Override
 	public String toString() {
-    	System.out.println(" - name:" + name);
+    	System.out.println(" - name: " + name);
 		return super.toString();
 	}
 

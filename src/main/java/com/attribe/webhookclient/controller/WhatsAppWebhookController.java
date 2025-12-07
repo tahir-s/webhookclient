@@ -50,7 +50,7 @@ public class WhatsAppWebhookController {
         return ResponseEntity.ok().build(); // Respond with 200 OK
     }
     
-    @PostMapping
+    @PostMapping()
     public ResponseEntity<Void> receiveWebhook(@RequestBody WebhookPayload payload) {
     	System.out.println("Received Webhook Event:");
     	System.out.println(payload.toString());

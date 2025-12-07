@@ -17,7 +17,7 @@ public class Contact {
     	if(profile!=null) {
     		System.out.println(" - profile" + profile.toString());
     	}
-    	System.out.println(" - wa_id" + wa_id);
+    	System.out.println(" - wa_id: " + wa_id);
     	return super.toString();
     }
 
