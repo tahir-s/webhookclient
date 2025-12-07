@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import com.attribe.webhookclient.pojo.client.MessageDTO;
 import com.attribe.webhookclient.pojo.whatsapp.Message;
 import com.attribe.webhookclient.pojo.whatsapp.Metadata;
+import com.attribe.webhookclient.service.WhatsAppSendMenuService;
 import com.attribe.webhookclient.service.WhatsAppSendMessageService;
 
 @Component("OfspHandler")
@@ -15,6 +16,9 @@ public class OfspHandler implements  ClientHandle{
 
 	@Autowired
 	private WhatsAppSendMessageService messageService;
+
+    @Autowired
+    private WhatsAppSendMenuService menuService;
 
     
 
@@ -28,7 +32,7 @@ public class OfspHandler implements  ClientHandle{
             String commandRecived = message.getText() != null ? message.getText().getBody() : "";
 
 
-            switch (commandRecived) {
+            switch (commandRecived.toLowerCase()) {
             case "1": // List Sponcered Child
                 sendListSponceredChildMessage(metadata, message);
                 break;
@@ -37,6 +41,9 @@ public class OfspHandler implements  ClientHandle{
                 break;
             case "3": // Get Latest News
                 sendListLatestNewsMessage(metadata, message);
+                break;
+            case "m": // Send Menu
+                sendMenuMessage(metadata, message);
                 break;
             default:
                 System.out.println("Unknown type!");
@@ -114,7 +121,7 @@ public class OfspHandler implements  ClientHandle{
 			MessageDTO messageDto= new MessageDTO();
 			messageDto.setTo(message.getFrom());
 			
-			messageDto.setBody("API will be call to get the List Donation");
+			messageDto.setBody("API will be call to get the List Donation. Mujtabab & TUba");
 			
 	
            
@@ -140,6 +147,25 @@ public class OfspHandler implements  ClientHandle{
 	
            
 			messageService.sendMessage(metadata.getPhone_number_id(), messageDto);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+        }
+
+    }
+
+
+    private void sendMenuMessage(Metadata metadata, Message message) {
+
+		try {
+
+			MessageDTO messageDto= new MessageDTO();
+			messageDto.setTo(message.getFrom());
+			
+			messageDto.setBody("");
+			
+	
+           
+			menuService.sendMessage(metadata.getPhone_number_id(), messageDto);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
         }

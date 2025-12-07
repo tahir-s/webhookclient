@@ -21,7 +21,7 @@ public class WhatsAppSendMessageService {
     private String apiUrl;
 
 
-    String accessToken = "EAAhSNCaW3poBQKBfDFWZAo2HkEZCkldxwA6Orun8IS7PU8aSlsUXKqxaYEziTFdT5xgsZBRNHFZBmsaSxjatDBfOiP6mIGVBFu17CEK2rBZCDSjbFRHR3IjyaE0pRDmY5Fm3n1Tk1BbSMfOQvQLWUnDsosJuayjZCkVQzG3bDdbGXySTiUbtBQR5XngYBmOvVoOu7biJiwNtR82hhYpPOF4jOVm0BwWgjhrgLmmP7ryvJ5ZCn6Gq9XLgJAaR2CEono8ZCZCYumxzouZCXiUCElCeNAXAZDZD";
+    String accessToken = "EAAhSNCaW3poBQDJQ5INiW1YmPJKkBOZBHQPmftCqDab1MNVl0z7b0wgt0vdVenhLv0RdFMQPpf2elEPWzwMz04vR3yYwpXAToewFq1lcpsxBuGVzBZBlKCtG1wr9SswET9wwD8GDTyJGXsspfimlNcVkLul1j46STn2p5YP3yuwhb0ZCJNKVIhXMSZBhV9F7hwZDZD";
 		
 	
 	public String sendMessage() {
@@ -37,7 +37,7 @@ public class WhatsAppSendMessageService {
 
 
     public String sendMessage(String phoneNumberId, MessageDTO message) throws Exception {
-		
+		System.out.println("WhatsAppSendMessageService.sendMessage -------------------- [START]");
 		
 		RestTemplate restTemplate = new RestTemplate();
 		String url = String.format("%s/%s/messages", apiUrl, phoneNumberId);
@@ -61,6 +61,10 @@ public class WhatsAppSendMessageService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(messagePayload, headers);
 
         ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+       
+        System.out.println(messagePayload.toString());
+       System.out.println("WhatsAppSendMessageService.sendMessage -------------------- [END]");
+		
         return response.getBody();
 		
 	
