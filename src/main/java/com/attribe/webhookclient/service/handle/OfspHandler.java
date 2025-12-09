@@ -4,8 +4,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.attribe.webhookclient.pojo.client.MessageDTO;
+import com.attribe.webhookclient.pojo.whatsapp.Interactive;
 import com.attribe.webhookclient.pojo.whatsapp.Message;
 import com.attribe.webhookclient.pojo.whatsapp.Metadata;
+import com.attribe.webhookclient.service.Constant;
 import com.attribe.webhookclient.service.WhatsAppSendMenuService;
 import com.attribe.webhookclient.service.WhatsAppSendMessageService;
 
@@ -29,8 +31,22 @@ public class OfspHandler implements  ClientHandle{
 
        
 		try {
-            String commandRecived = message.getText() != null ? message.getText().getBody() : "";
+            String commandRecived ="";
+            String type =  message.getType()+"";
+            String button_id = "";
+            
+            if(Constant.MessageType.test.equals(type)){
+                commandRecived =  message.getText() != null ? message.getText().getBody() : "";
+            }
+            else if(Constant.MessageType.interactive.equals(type)){
 
+                sendButonClickMessage(metadata, message);
+                return;
+                
+
+            }
+
+           
 
             switch (commandRecived.toLowerCase()) {
             case "1": // List Sponcered Child
@@ -174,6 +190,29 @@ public class OfspHandler implements  ClientHandle{
 
 
 
+    private void sendButonClickMessage(Metadata metadata, Message message) {
+
+		try {
+
+			MessageDTO messageDto= new MessageDTO();
+			messageDto.setTo(message.getFrom());
+            String  button_id = "";
+			
+             Interactive interactive = message.getInteractive();
+                if(interactive!=null){
+                   button_id =  interactive.getButton_reply().getId();
+
+                }
+			messageDto.setBody("Clciked --> Button Id:" + button_id );
+			
+	
+           
+			messageService.sendMessage(metadata.getPhone_number_id(), messageDto);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+        }
+
+    }
 
     
 
