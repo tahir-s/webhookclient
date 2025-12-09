@@ -17,6 +17,7 @@ import com.attribe.webhookclient.pojo.whatsapp.Entry;
 import com.attribe.webhookclient.pojo.whatsapp.Message;
 import com.attribe.webhookclient.pojo.whatsapp.Value;
 import com.attribe.webhookclient.pojo.whatsapp.WebhookPayload;
+import com.attribe.webhookclient.service.WhatsAppSendMessageService;
 import com.attribe.webhookclient.service.handle.ClientHandle;
 import com.attribe.webhookclient.service.handle.ClientHandlerFactory;
 
@@ -27,6 +28,9 @@ public class WhatsAppWebhookController {
     
     @Autowired
     private ClientHandlerFactory factory;
+
+    @Autowired
+    private WhatsAppSendMessageService sendMessageService;
    
     // STEP 1: Verification Endpoint
     @GetMapping()
@@ -65,6 +69,18 @@ public class WhatsAppWebhookController {
                             String text = message.getText() != null ? message.getText().getBody() : null;
                             System.out.println("Received message from " + from + ": " + text);
 
+                            /**
+                             * Mark messae a read ---------------------------------
+                             */
+                            try {
+                                sendMessageService.markMessageRead(value.getMetadata().getPhone_number_id(), message.getId());
+                                
+                            } catch (Exception e) {
+                            }
+
+                            /**
+                             * Manange in bond message to send response
+                             */
                             try {
                                 
                                 ClientHandle handle = factory.getHandler("OfspHandler");

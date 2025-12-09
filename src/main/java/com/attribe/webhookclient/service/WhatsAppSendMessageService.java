@@ -71,4 +71,38 @@ public class WhatsAppSendMessageService {
 	}
 
 
+    public String markMessageRead(String phoneNumberId, String messageId) throws Exception {
+		System.out.println("WhatsAppSendMessageService.markMessageRead -------------------- [START]");
+		
+		RestTemplate restTemplate = new RestTemplate();
+		String url = String.format("%s/%s/messages", apiUrl, phoneNumberId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        
+        Map<String, Object> messagePayload = new HashMap<>();
+        messagePayload.put("messaging_product", "whatsapp");
+        messagePayload.put("status", "read");
+        messagePayload.put("message_id", messageId);
+        
+        
+       
+        
+        
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(messagePayload, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+       
+       
+       System.out.println("WhatsAppSendMessageService.markMessageRead -------------------- [END]");
+		
+        return response.getBody();
+		
+	
+	}
+
+
+
 }

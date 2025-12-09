@@ -34,15 +34,15 @@ public class SystemActivityLog {
     private String interactiveButtonTitle;
 
     //Contact
-    private String contactontactWaId;
+    private String contactWaId;
     private String contactProfileName;
 
 
 
 
     //Context
-    private String ContextFrom;
-    private String ContextId;
+    private String contextFrom;
+    private String contextId;
 
 
     //Metadata
