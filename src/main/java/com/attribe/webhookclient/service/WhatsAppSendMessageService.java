@@ -20,9 +20,8 @@ public class WhatsAppSendMessageService {
 	@Value("${whatsapp.api.url}")
     private String apiUrl;
 
-
-    String accessToken = "EAAhSNCaW3poBQDJQ5INiW1YmPJKkBOZBHQPmftCqDab1MNVl0z7b0wgt0vdVenhLv0RdFMQPpf2elEPWzwMz04vR3yYwpXAToewFq1lcpsxBuGVzBZBlKCtG1wr9SswET9wwD8GDTyJGXsspfimlNcVkLul1j46STn2p5YP3yuwhb0ZCJNKVIhXMSZBhV9F7hwZDZD";
-		
+	@Value("${whatsapp.token}")
+	private String accessToken;
 	
 	public String sendMessage() {
 		

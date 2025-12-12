@@ -24,14 +24,15 @@ import com.attribe.webhookclient.service.handle.ClientHandlerFactory;
 @RestController
 @RequestMapping("/webhook")
 public class WhatsAppWebhookController {
-    private final String VERIFY_TOKEN = "EAAhSNCaW3poBQDJQ5INiW1YmPJKkBOZBHQPmftCqDab1MNVl0z7b0wgt0vdVenhLv0RdFMQPpf2elEPWzwMz04vR3yYwpXAToewFq1lcpsxBuGVzBZBlKCtG1wr9SswET9wwD8GDTyJGXsspfimlNcVkLul1j46STn2p5YP3yuwhb0ZCJNKVIhXMSZBhV9F7hwZDZD"; // your custom token
+    
+    @org.springframework.beans.factory.annotation.Value("${whatsapp.token}")
+    private String whatsappToken;
     
     @Autowired
     private ClientHandlerFactory factory;
 
     @Autowired
     private WhatsAppSendMessageService sendMessageService;
-   
     // STEP 1: Verification Endpoint
     @GetMapping()
     public ResponseEntity<String> verifyWebhook(
@@ -39,7 +40,7 @@ public class WhatsAppWebhookController {
             @RequestParam(name = "hub.challenge", required = false) String challenge,
             @RequestParam(name = "hub.verify_token", required = false) String token) {
 
-        if ("subscribe".equals(mode) && VERIFY_TOKEN.equals(token)) {
+        if ("subscribe".equals(mode) && whatsappToken.equals(token)) {
             return ResponseEntity.ok(challenge); // Meta expects this response
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Verification failed");
@@ -56,9 +57,14 @@ public class WhatsAppWebhookController {
     
     @PostMapping()
     public ResponseEntity<Void> receiveWebhook(@RequestBody WebhookPayload payload) {
+    	
+    	// Validate payload
+    	if (payload == null || payload.getObject() == null || payload.getEntry() == null) {
+    		return ResponseEntity.badRequest().build();
+    	}
+    	
     	System.out.println("Received Webhook Event:");
     	System.out.println(payload.toString());
-    	
         if ("whatsapp_business_account".equals(payload.getObject())) {
             for (Entry entry : payload.getEntry()) {
                 for (Change change : entry.getChanges()) {
