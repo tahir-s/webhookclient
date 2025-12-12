@@ -1,0 +1,362 @@
+# WhatsAppSendMenuService - Refactoring Task
+
+## Objective
+Refactor WhatsAppSendMenuService.java to follow Spring Boot best practices and improve code quality. This is part of the P1 and P2 priority fixes.
+
+## Current Issues to Fix
+
+### P1 - High Priority
+1. **Hardcoded Messages**: Menu heading, buttons, and footer text are hardcoded with TODO comments
+2. **RestTemplate Not Injected**: `new RestTemplate()` is created locally instead of being injected
+3. **No Logging**: No logging statements for debugging
+
+### P2 - Medium Priority
+1. **Lack of Configuration**: Messages should be externalized to `application.properties`
+2. **Code Organization**: Large method with mixed concerns (message building and sending)
+3. **No Tests**: Service lacks unit tests
+
+---
+
+## Tasks to Complete
+
+### Step 1: Update `application.properties`
+Add the following configuration entries for menu messages:
+
+````properties
+# WhatsApp Menu Configuration
+whatsapp.menu.heading=Welcome! Please choose an option:
+whatsapp.menu.footer=Powered by WhatsApp Attribe.AI
+whatsapp.menu.button.track=📦 Track Order
+whatsapp.menu.button.shop=🛍️ Shop Products
+whatsapp.menu.button.support=📞 Contact Support
+````
+
+---
+
+### Step 2: Create `MessageTemplateService.java`
+Create a new service class to handle message template building and configuration. This separates concerns and makes the code more maintainable.
+
+````java
+package com.attribe.webhookclient.service;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+@Service
+public class MessageTemplateService {
+
+    @Value("${whatsapp.menu.heading}")
+    private String menuHeading;
+
+    @Value("${whatsapp.menu.footer}")
+    private String menuFooter;
+
+    @Value("${whatsapp.menu.button.track}")
+    private String buttonTrack;
+
+    @Value("${whatsapp.menu.button.shop}")
+    private String buttonShop;
+
+    @Value("${whatsapp.menu.button.support}")
+    private String buttonSupport;
+
+    /**
+     * Builds an interactive menu message payload for WhatsApp
+     * @param phoneNumber The recipient's phone number
+     * @return Map containing the complete message payload
+     */
+    public Map<String, Object> buildMenuMessagePayload(String phoneNumber) {
+        Map<String, Object> messagePayload = new HashMap<>();
+        messagePayload.put("messaging_product", "whatsapp");
+        messagePayload.put("to", phoneNumber);
+        messagePayload.put("type", "interactive");
+
+        Map<String, Object> interactive = new HashMap<>();
+        interactive.put("type", "button");
+
+        // Build body with heading
+        Map<String, Object> body = new HashMap<>();
+        body.put("text", menuHeading);
+        interactive.put("body", body);
+
+        // Build action with buttons
+        Map<String, Object> action = new HashMap<>();
+        action.put("buttons", buildMenuButtons());
+        interactive.put("action", action);
+
+        // Build footer
+        Map<String, Object> footer = new HashMap<>();
+        footer.put("text", menuFooter);
+        interactive.put("footer", footer);
+
+        messagePayload.put("interactive", interactive);
+        return messagePayload;
+    }
+
+    /**
+     * Creates the menu buttons
+     * @return List of button objects
+     */
+    private List<Map<String, Object>> buildMenuButtons() {
+        List<Map<String, Object>> buttons = new ArrayList<>();
+        buttons.add(createButton("menu_1", buttonTrack));
+        buttons.add(createButton("menu_2", buttonShop));
+        buttons.add(createButton("menu_3", buttonSupport));
+        return buttons;
+    }
+
+    /**
+     * Creates a single interactive button
+     * @param id Unique button identifier
+     * @param title Button display text
+     * @return Map representing the button
+     */
+    private Map<String, Object> createButton(String id, String title) {
+        Map<String, Object> reply = new HashMap<>();
+        reply.put("id", id);
+        reply.put("title", title);
+
+        Map<String, Object> button = new HashMap<>();
+        button.put("type", "reply");
+        button.put("reply", reply);
+
+        return button;
+    }
+}
+````
+
+---
+
+### Step 3: Update WhatsAppSendMenuService.java
+Refactor the service to use injected dependencies, logging, and the new `MessageTemplateService`.
+
+````java
+package com.attribe.webhookclient.service;
+
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.attribe.webhookclient.pojo.client.ClientDTO;
+import com.attribe.webhookclient.pojo.client.MessageDTO;
+
+@Service
+public class WhatsAppSendMenuService {
+
+	private static final Logger logger = LoggerFactory.getLogger(WhatsAppSendMenuService.class);
+
+	@Value("${whatsapp.api.url}")
+	private String apiUrl;
+
+	@Value("${whatsapp.token}")
+	private String accessToken;
+
+	@Autowired
+	private RestTemplate restTemplate;
+
+	@Autowired
+	private MessageTemplateService messageTemplateService;
+
+	/**
+	 * Sends a menu message to a WhatsApp client
+	 * @param client The client DTO containing phone number information
+	 * @param message The message DTO
+	 * @return API response body
+	 * @throws Exception If message sending fails
+	 */
+	public String sendMessage(ClientDTO client, MessageDTO message) throws Exception {
+		logger.info("Sending menu message to client: {}", client.getPhoneNumberId());
+		return sendMessage(client.getPhoneNumberId(), message);
+	}
+
+	/**
+	 * Sends a menu message to a specific phone number ID
+	 * @param phoneNumberId WhatsApp Business Account Phone Number ID
+	 * @param message The message DTO
+	 * @return API response body
+	 * @throws Exception If message sending fails
+	 */
+	public String sendMessage(String phoneNumberId, MessageDTO message) throws Exception {
+		try {
+			logger.debug("Building menu message payload for phone number ID: {}", phoneNumberId);
+			
+			String url = String.format("%s/%s/messages", apiUrl, phoneNumberId);
+			logger.debug("WhatsApp API URL: {}", url);
+
+			// Build HTTP headers
+			HttpHeaders headers = new HttpHeaders();
+			headers.setBearerAuth(accessToken);
+			headers.setContentType(MediaType.APPLICATION_JSON);
+
+			// Build message payload using MessageTemplateService
+			Map<String, Object> messagePayload = messageTemplateService.buildMenuMessagePayload(message.getTo());
+
+			// Create HTTP request entity
+			HttpEntity<Map<String, Object>> request = new HttpEntity<>(messagePayload, headers);
+
+			// Send request to WhatsApp API
+			logger.info("Sending menu message to WhatsApp API");
+			ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+
+			logger.info("Menu message sent successfully. Status: {}", response.getStatusCode());
+			return response.getBody();
+
+		} catch (Exception e) {
+			logger.error("Failed to send menu message to phone number ID: {}", phoneNumberId, e);
+			throw e;
+		}
+	}
+
+	/**
+	 * Returns the API URL (for testing purposes)
+	 * @return The configured API URL
+	 */
+	public String sendMessage() {
+		return apiUrl;
+	}
+}
+````
+
+---
+
+### Step 4: Create Unit Tests
+Create a test class to verify the refactored service works correctly.
+
+````java
+package com.attribe.webhookclient.service;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.MockBean;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+
+import com.attribe.webhookclient.pojo.client.ClientDTO;
+import com.attribe.webhookclient.pojo.client.MessageDTO;
+
+@SpringBootTest
+class WhatsAppSendMenuServiceTest {
+
+	@Autowired
+	private WhatsAppSendMenuService service;
+
+	@MockBean
+	private RestTemplate restTemplate;
+
+	@MockBean
+	private MessageTemplateService messageTemplateService;
+
+	private ClientDTO testClient;
+	private MessageDTO testMessage;
+
+	@BeforeEach
+	void setUp() {
+		testClient = new ClientDTO();
+		testClient.setPhoneNumberId("123456789");
+
+		testMessage = new MessageDTO();
+		testMessage.setTo("1234567890");
+		testMessage.setType("interactive");
+	}
+
+	@Test
+	void testSendMessageWithClientDTO_Success() throws Exception {
+		// Arrange
+		String expectedResponse = "{\"messages\":[{\"id\":\"wamid.123\"}]}";
+		when(messageTemplateService.buildMenuMessagePayload(anyString())).thenReturn(java.util.Map.of());
+		when(restTemplate.postForEntity(anyString(), any(), eq(String.class)))
+				.thenReturn(new ResponseEntity<>(expectedResponse, HttpStatus.OK));
+
+		// Act
+		String result = service.sendMessage(testClient, testMessage);
+
+		// Assert
+		assertNotNull(result);
+		assertEquals(expectedResponse, result);
+		verify(restTemplate, times(1)).postForEntity(anyString(), any(), eq(String.class));
+	}
+
+	@Test
+	void testSendMessageWithPhoneNumberId_Success() throws Exception {
+		// Arrange
+		String phoneNumberId = "123456789";
+		String expectedResponse = "{\"messages\":[{\"id\":\"wamid.123\"}]}";
+		when(messageTemplateService.buildMenuMessagePayload(anyString())).thenReturn(java.util.Map.of());
+		when(restTemplate.postForEntity(anyString(), any(), eq(String.class)))
+				.thenReturn(new ResponseEntity<>(expectedResponse, HttpStatus.OK));
+
+		// Act
+		String result = service.sendMessage(phoneNumberId, testMessage);
+
+		// Assert
+		assertNotNull(result);
+		assertEquals(expectedResponse, result);
+	}
+
+	@Test
+	void testSendMessage_ApiFailure() throws Exception {
+		// Arrange
+		String phoneNumberId = "123456789";
+		when(messageTemplateService.buildMenuMessagePayload(anyString())).thenReturn(java.util.Map.of());
+		when(restTemplate.postForEntity(anyString(), any(), eq(String.class)))
+				.thenThrow(new RuntimeException("API Error"));
+
+		// Act & Assert
+		assertThrows(Exception.class, () -> service.sendMessage(phoneNumberId, testMessage));
+	}
+
+	@Test
+	void testGetApiUrl() {
+		// Act
+		String url = service.sendMessage();
+
+		// Assert
+		assertNotNull(url);
+		assertTrue(url.contains("graph.facebook.com"));
+	}
+}
+````
+
+---
+
+## Validation Checklist
+
+After completing all steps, verify:
+
+- [ ] `application.properties` has all menu configuration properties
+- [ ] `MessageTemplateService.java` is created with all required methods
+- [ ] WhatsAppSendMenuService.java is refactored with injected `RestTemplate`
+- [ ] All `System.out.println()` are replaced with `logger.*()` calls
+- [ ] All hardcoded messages are removed
+- [ ] Unit tests pass: `mvn test` or run tests in VS Code
+- [ ] No compilation errors
+- [ ] Service can be autowired in controllers without issues
+
+---
+
+## Notes
+- The `MessageTemplateService` can be extended later to support dynamic templates from the database
+- All configuration values can be easily changed by updating `application.properties`
+- Logging helps with production debugging
+- Unit tests ensure the service works correctly with mocked dependencies
