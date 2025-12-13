@@ -70,7 +70,7 @@ public class OfspHandler implements  ClientHandle{
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
         }
-;
+
     }
 
 

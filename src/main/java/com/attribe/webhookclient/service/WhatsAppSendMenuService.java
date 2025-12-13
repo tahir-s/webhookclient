@@ -1,10 +1,10 @@
 package com.attribe.webhookclient.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -18,96 +18,78 @@ import com.attribe.webhookclient.pojo.client.MessageDTO;
 
 @Service
 public class WhatsAppSendMenuService {
-	
+
+	private static final Logger logger = LoggerFactory.getLogger(WhatsAppSendMenuService.class);
+
 	@Value("${whatsapp.api.url}")
+
+
     private String apiUrl;
 
 	@Value("${whatsapp.token}")
 	private String accessToken;
-	
+
+	@Autowired
+	private RestTemplate restTemplate;
+
+	@Autowired
+	private MessageTemplateService messageTemplateService;
+
+	/**
+	 * Sends a menu message to a WhatsApp client
+	 * @param client The client DTO containing phone number information
+	 * @param message The message DTO
+	 * @return API response body
+	 * @throws Exception If message sending fails
+	 */
+	public String sendMessage(ClientDTO client, MessageDTO message) throws Exception {
+		logger.info("Sending menu message to client: {}", client.getPhoneNumberId());
+		return sendMessage(client.getPhoneNumberId(), message);
+	}
+
+	/**
+	 * Sends a menu message to a specific phone number ID
+	 * @param phoneNumberId WhatsApp Business Account Phone Number ID
+	 * @param message The message DTO
+	 * @return API response body
+	 * @throws Exception If message sending fails
+	 */
+	public String sendMessage(String phoneNumberId, MessageDTO message) throws Exception {
+		try {
+			logger.debug("Building menu message payload for phone number ID: {}", phoneNumberId);
+
+			String url = String.format("%s/%s/messages", apiUrl, phoneNumberId);
+			logger.debug("WhatsApp API URL: {}", url);
+
+			// Build HTTP headers
+			HttpHeaders headers = new HttpHeaders();
+			headers.setBearerAuth(accessToken);
+			headers.setContentType(MediaType.APPLICATION_JSON);
+
+			// Build message payload using MessageTemplateService
+			Map<String, Object> messagePayload = messageTemplateService.buildMenuMessagePayload(message.getTo());
+
+			// Create HTTP request entity
+			HttpEntity<Map<String, Object>> request = new HttpEntity<>(messagePayload, headers);
+
+			// Send request to WhatsApp API
+			logger.info("Sending menu message to WhatsApp API");
+			ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+
+			logger.info("Menu message sent successfully. Status: {}", response.getStatusCode());
+			return response.getBody();
+
+		} catch (Exception e) {
+			logger.error("Failed to send menu message to phone number ID: {}", phoneNumberId, e);
+			throw e;
+		}
+	}
+
+	/**
+	 * Returns the API URL (for testing purposes)
+	 * @return The configured API URL
+	 */
 	public String sendMessage() {
-		
 		return apiUrl;
 	}
-	
-	public String sendMessage(ClientDTO cleint, MessageDTO message) throws Exception {
-		return sendMessage(cleint.getPhoneNumberId(), message);
-	
-	}
-
-
-
-    public String sendMessage(String phoneNumberId, MessageDTO message) throws Exception {
-		
-		
-		RestTemplate restTemplate = new RestTemplate();
-		String url = String.format("%s/%s/messages", apiUrl, phoneNumberId);
-
-        // ---- HTTP Request ----
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        
-        // ---- Payload of Response ----
-        Map<String, Object> messagePayload = new HashMap<>();
-        messagePayload.put("messaging_product", "whatsapp");
-        messagePayload.put("to", message.getTo());
-        messagePayload.put("type", "interactive"); // interactive / text 
-
-
-        // ---- Building WhatsApp Interactive Button Message ----
-        Map<String, Object> interactive = new HashMap<>();
-        interactive.put("type", "button");
-
-        //TODO --- HEADING of mwnu: Will make it dynamic in futre for DB/YML 
-        Map<String, Object> body = new HashMap<>();
-        body.put("text", "Welcome! Please choose an option:");
-
-        //TODO --- BUTTONS of menu:  Will make it dynamic in futre for DB/YML 
-        List<Map<String, Object>> buttons = new ArrayList<>();
-        buttons.add(createButton("menu_1", "📦 Track Order"));
-        buttons.add(createButton("menu_2", "🛍️ Shop Products"));
-        buttons.add(createButton("menu_3", "📞 Contact Support"));
-
-        Map<String, Object> action = new HashMap<>();
-        action.put("buttons", buttons);
-        interactive.put("body", body);
-
-        //TODO --- FOOTER of menu:  Will make it dynamic in futre for DB/YML 
-        Map<String, Object> footer = new HashMap<>();
-        footer.put("text", "Powered by WhatsApp Attribe.AI");
-
-         
-        // ---- Assembing message---
-        interactive.put("body", body);
-        interactive.put("footer", footer);
-        interactive.put("action", action);
-        messagePayload.put("interactive", interactive);
-
-        
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(messagePayload, headers);
-
-        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-        return response.getBody();
-		
-	
-	}
-
-
-    /**
-     * This method us user for creating interactive menu.
-     */
-    private Map<String, Object> createButton(String id, String title) {
-        Map<String, Object> reply = new HashMap<>();
-        reply.put("id", id);
-        reply.put("title", title);
-
-        Map<String, Object> button = new HashMap<>();
-        button.put("type", "reply");
-        button.put("reply", reply);
-
-        return button;
-
-}
-
 }
