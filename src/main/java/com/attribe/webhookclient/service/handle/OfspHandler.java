@@ -39,23 +39,19 @@ public class OfspHandler implements  ClientHandle{
                 commandRecived =  message.getText() != null ? message.getText().getBody() : "";
             }
             else if(Constant.MessageType.interactive.equals(type)){
-
-                sendButonClickMessage(metadata, message);
-                return;
-                
-
+                commandRecived= getButtonId(metadata, message);
             }
 
-           
+           System.out.println("Command Recived:---------- "+ commandRecived);
 
             switch (commandRecived.toLowerCase()) {
-            case "1": // List Sponcered Child
+            case "lst_sponcered_childs": // List Sponcered Child
                 sendListSponceredChildMessage(metadata, message);
                 break;
-            case "2": // List Donation
+            case "lst_last_donations": // List Donation
                 sendListDonationessage(metadata, message);
                 break;
-            case "3": // Get Latest News
+            case "lst_contact_detais": // Get Latest News
                 sendListLatestNewsMessage(metadata, message);
                 break;
             case "m": // Send Menu
@@ -63,7 +59,7 @@ public class OfspHandler implements  ClientHandle{
                 break;
             default:
                 System.out.println("Unknown type!");
-                sendShowMenuMessage(metadata, message);
+                sendMenuMessage(metadata, message);
         }
 
            
@@ -78,6 +74,7 @@ public class OfspHandler implements  ClientHandle{
     /**
      * This method will send menu to the customer
      */
+    @Deprecated
     private void sendShowMenuMessage(Metadata metadata, Message message) {
 
 
@@ -190,27 +187,27 @@ public class OfspHandler implements  ClientHandle{
 
 
 
-    private void sendButonClickMessage(Metadata metadata, Message message) {
+    private String getButtonId(Metadata metadata, Message message) {
+         
+        String  button_id = "m"; // be default show menu
 
 		try {
 
 			MessageDTO messageDto= new MessageDTO();
 			messageDto.setTo(message.getFrom());
-            String  button_id = "";
+            
 			
              Interactive interactive = message.getInteractive();
                 if(interactive!=null){
                    button_id =  interactive.getButton_reply().getId();
 
                 }
-			messageDto.setBody("Clciked --> Button Id:" + button_id );
 			
-	
-           
-			messageService.sendMessage(metadata.getPhone_number_id(), messageDto);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
         }
+
+        return button_id;
 
     }
 

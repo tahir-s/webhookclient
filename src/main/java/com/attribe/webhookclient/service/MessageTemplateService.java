@@ -65,9 +65,9 @@ public class MessageTemplateService {
      */
     private List<Map<String, Object>> buildMenuButtons() {
         List<Map<String, Object>> buttons = new ArrayList<>();
-        buttons.add(createButton("menu_1", buttonTrack));
-        buttons.add(createButton("menu_2", buttonShop));
-        buttons.add(createButton("menu_3", buttonSupport));
+        buttons.add(createButton("lst_sponcered_childs", buttonTrack));
+        buttons.add(createButton("lst_last_donations", buttonShop));
+        buttons.add(createButton("lst_contact_detais", buttonSupport));
         return buttons;
     }
 
