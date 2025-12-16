@@ -1,5 +1,7 @@
 package com.attribe.webhookclient.entity;
 
+import java.util.Date;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -48,6 +50,11 @@ public class SystemActivityLog {
     //Metadata
     private String metadataDisplayPhonNumber;
     private String metadataPhoneNumberId;
+
+
+    // Common values
+    private Date createdAt;
+    private String createdBy;
     
 
 }

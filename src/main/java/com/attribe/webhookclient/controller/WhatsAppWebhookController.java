@@ -1,5 +1,6 @@
 package com.attribe.webhookclient.controller;
 
+import java.util.Date;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -165,6 +166,9 @@ public class WhatsAppWebhookController {
                 activityLog.setMetadataDisplayPhonNumber(value.getMetadata().getDisplay_phone_number());
                 activityLog.setMetadataPhoneNumberId(value.getMetadata().getPhone_number_id());
             }
+
+            activityLog.setCreatedAt(new Date(System.currentTimeMillis()));
+            activityLog.setCreatedBy("System");
             
             // Save to database
             systemActivityLogService.saveActivityLog(activityLog);
