@@ -1,0 +1,41 @@
+Objective:
+Create a new Maven sub-module named thirdparty-client in the existing parent POM. 
+This module will act as a reusable client library for third-party integrations.
+Must produce a JAR that can be shared with the API provider.
+
+Requirements
+1. Maven Module Setup
+
+ * Add a new sub-module thirdparty-client to the existing parent pom.xml
+ * Packaging type: JAR
+ * Module must be included in the parent multi-module build
+ * Add Lombok dependency to this module
+
+2. Base Package
+com.attribe.thirdparty.client
+
+3. POJO Classes
+Request Class
+
+Package: com.attribe.thirdparty.client.model
+
+Fields (all String):
+
+ * cellNumber
+ * command
+ * id
+ 
+Response Class
+
+Package: com.attribe.thirdparty.client.model
+
+ * String responseType
+ * Map<String, Object> content
+ 
+4. Constants Class
+Package: com.attribe.thirdparty.client.constants
+
+public static final String URL;
+public static final String TEXT;
+public static final String LIST;
+public static final String BUTTON;
