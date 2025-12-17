@@ -11,7 +11,7 @@ import com.attribe.webhookclient.service.Constant;
 import com.attribe.webhookclient.service.WhatsAppSendMenuService;
 import com.attribe.webhookclient.service.WhatsAppSendMessageService;
 
-@Component("OfspHandler")
+@Component("763421936848515")
 public class OfspHandler implements  ClientHandle{
 
 
@@ -68,43 +68,6 @@ public class OfspHandler implements  ClientHandle{
         }
 
     }
-
-
-
-    /**
-     * This method will send menu to the customer
-     */
-    @Deprecated
-    private void sendShowMenuMessage(Metadata metadata, Message message) {
-
-
-		try {
-
-           
-			MessageDTO messageDto= new MessageDTO();
-			messageDto.setTo(message.getFrom());
-			
-			messageDto.setBody("""
-                                           Welcom to Orphan Finance Support Program *(OFSP)* of Alkhidmat, press *M* for main menu. 
-                                           
-                                           \ud83d\udd22 *Options*
-                                           
-                                           1\ufe0f\u20e3 List Sponcered Child
-                                           2\ufe0f\u20e3 List Donation
-                                           3\ufe0f\u20e3 Get Latest development""");
-			
-		
-			String phone_number_id= metadata.getPhone_number_id();
-			
-            System.out.print(phone_number_id);
-			messageService.sendMessage(phone_number_id, messageDto);
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-        }
-
-    }
-
-
 
 
 

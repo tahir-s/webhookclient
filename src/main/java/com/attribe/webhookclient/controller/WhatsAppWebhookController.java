@@ -101,10 +101,13 @@ public class WhatsAppWebhookController {
                              * Manange in bond message to send response
                              */
                             try {
-                                
-                                ClientHandle handle = factory.getHandler("OfspHandler");
+                                String phoneNumberId = value.getMetadata().getPhone_number_id();
+                                ClientHandle handle = factory.getHandler(phoneNumberId);
                                 if(handle!=null){
                                     handle.handleInbondMessage(value.getMetadata(), message);
+                                }
+                                else{
+                                    logger.error("No handler found for phone number ID: {}", phoneNumberId);
                                 }
                                 
                             } catch (Exception e) {
