@@ -11,8 +11,11 @@ public class ClientHandlerFactory {
      private ApplicationContext context;
 
      public ClientHandle getHandler(String type) {
-        return context.getBean(type, ClientHandle.class);
-    
+        try {
+            return context.getBean(type, ClientHandle.class);
+        } catch (Exception e) {
+            return context.getBean("default", ClientHandle.class);
+        }
     }
 
     
