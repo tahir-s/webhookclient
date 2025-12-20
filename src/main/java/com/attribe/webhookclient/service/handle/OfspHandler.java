@@ -54,6 +54,9 @@ public class OfspHandler implements  ClientHandle{
             case "lst_contact_detais": // Get Latest News
                 sendListLatestNewsMessage(metadata, message);
                 break;
+            case "chat_agent": // Chat Agent
+                sendChatAgentMessage(metadata, message);
+                break;
             case "m": // Send Menu
                 sendMenuMessage(metadata, message);
                 break;
@@ -119,6 +122,25 @@ public class OfspHandler implements  ClientHandle{
 			messageDto.setTo(message.getFrom());
 			
 			messageDto.setBody("API will be call to get the List Latest News Message");
+			
+	
+           
+			messageService.sendMessage(metadata.getPhone_number_id(), messageDto);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+        }
+
+    }
+
+
+    private void sendChatAgentMessage(Metadata metadata, Message message) {
+
+		try {
+
+			MessageDTO messageDto= new MessageDTO();
+			messageDto.setTo(message.getFrom());
+			
+			messageDto.setBody("Coming soon...");
 			
 	
            

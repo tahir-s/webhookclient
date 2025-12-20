@@ -26,6 +26,9 @@ public class MessageTemplateService {
     @Value("${whatsapp.menu.button.support}")
     private String buttonSupport;
 
+    @Value("${whatsapp.menu.button.chat-agent}")
+    private String buttonChatAgent;
+
     /**
      * Builds an interactive menu message payload for WhatsApp
      * @param phoneNumber The recipient's phone number
@@ -67,7 +70,8 @@ public class MessageTemplateService {
         List<Map<String, Object>> buttons = new ArrayList<>();
         buttons.add(createButton("lst_sponcered_childs", buttonTrack));
         buttons.add(createButton("lst_last_donations", buttonShop));
-        buttons.add(createButton("lst_contact_detais", buttonSupport));
+       // buttons.add(createButton("lst_contact_detais", buttonSupport));
+        buttons.add(createButton("chat_agent", buttonChatAgent)); // Max allowed buttons: 3"
         return buttons;
     }
 
