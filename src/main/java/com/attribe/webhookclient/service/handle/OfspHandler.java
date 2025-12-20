@@ -1,5 +1,7 @@
 package com.attribe.webhookclient.service.handle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -10,11 +12,12 @@ import com.attribe.webhookclient.pojo.whatsapp.Metadata;
 import com.attribe.webhookclient.service.Constant;
 import com.attribe.webhookclient.service.WhatsAppSendMenuService;
 import com.attribe.webhookclient.service.WhatsAppSendMessageService;
+import com.attribe.webhookclient.service.openai.OpenAIException;
+import com.attribe.webhookclient.service.openai.OpenAIService;
 
 @Component("763421936848515")
 public class OfspHandler implements  ClientHandle{
-
-
+    private static final Logger logger = LoggerFactory.getLogger(OfspHandler.class);
 
 	@Autowired
 	private WhatsAppSendMessageService messageService;
@@ -22,7 +25,8 @@ public class OfspHandler implements  ClientHandle{
     @Autowired
     private WhatsAppSendMenuService menuService;
 
-    
+    @Autowired
+    private OpenAIService openAIService;
 
 
     @Override
@@ -136,17 +140,26 @@ public class OfspHandler implements  ClientHandle{
     private void sendChatAgentMessage(Metadata metadata, Message message) {
 
 		try {
-
-			MessageDTO messageDto= new MessageDTO();
+			MessageDTO messageDto = new MessageDTO();
 			messageDto.setTo(message.getFrom());
 			
-			messageDto.setBody("Coming soon...");
+			// Get user message from text
+			String userMessage = message.getText() != null ? message.getText().getBody() : "Hello";
+			logger.info("Processing chat agent request from: {} with message: {}", message.getFrom(), userMessage);
 			
-	
-           
+			try {
+				// Get response from OpenAI API
+				String aiResponse = openAIService.getResponse(userMessage);
+				messageDto.setBody(aiResponse);
+				logger.info("Successfully received response from OpenAI API");
+			} catch (OpenAIException e) {
+				logger.error("OpenAI API error: {}", e.getMessage(), e);
+				messageDto.setBody("I apologize, I'm temporarily unavailable. Please try again later.");
+			}
+			
 			messageService.sendMessage(metadata.getPhone_number_id(), messageDto);
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
+			logger.error("Error in sendChatAgentMessage: {}", e.getMessage(), e);
         }
 
     }

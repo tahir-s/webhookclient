@@ -32,3 +32,30 @@ public static final String URL;
 public static final String TEXT;
 public static final String LIST;
 public static final String BUTTON;
+
+
+--------------------------------- OPEN AI Prompt -------------------------------
+
+You are a senior Java backend engineer.
+Create a Spring Boot REST API that integrates with OpenAI using the Responses API.
+
+Requirements:
+
+1. Use application.properties
+openai.api-key=${OPENAI_API_KEY}
+openai.url=https://api.openai.com/v1/responses
+
+2. Read OpenAI API key from environment variable
+
+3. Use RestTemplate (not WebClient)
+
+4. Add a new OpenAIService service under the package package com.attribe.webhookclient.service.openai
+Call OpenAI endpoint https://api.openai.com/v1/responses
+Use model gpt-4.1-mini
+
+5.In OfspHandler use OpenAIService so that sendChatAgentMessage can send response message 
+
+6. Handle errors gracefully with meaningful exceptions
+Follow clean code and production-ready structure
+
+7. Write unit test for OpenAIService services
