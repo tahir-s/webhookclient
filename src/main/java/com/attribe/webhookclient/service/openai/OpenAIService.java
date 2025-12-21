@@ -60,9 +60,18 @@ public class OpenAIService {
 
             // Make API call
             OpenAIResponse response = restTemplate.postForObject(apiUrl, entity, OpenAIResponse.class);
+            
+            logger.info("Raw response received: {}", response);
+            logger.info("Response output type: {}", response.getOutput().getClass().getName());
+            if (!response.getOutput().isEmpty()) {
+                logger.info("First output item type: {}", response.getOutput().get(0).getClass().getName());
+                logger.info("First output item value: {}", response.getOutput().get(0));
+            }
 
             // Extract and return the response
-            return extractResponseContent(response);
+            String result = extractResponseContent(response);
+            logger.info("Final extracted response: {}", result);
+            return result;
 
         } catch (RestClientException e) {
             String errorMsg = "Failed to call OpenAI API: " + e.getMessage();
@@ -124,18 +133,22 @@ public class OpenAIService {
             throw new OpenAIException("OpenAI API returned null output object");
         }
 
-        String content;
+        String content = null;
+        
+        logger.debug("Processing output object of type: {}", outputObject.getClass().getSimpleName());
+        
         if (outputObject instanceof String) {
             // Handle case where output is a string
             content = (String) outputObject;
+            logger.debug("Output is String: {}", content);
         } else if (outputObject instanceof java.util.Map) {
-            // Handle case where output is an object/map - try multiple field names
+            // Handle case where output is an object/map
             @SuppressWarnings("unchecked")
             java.util.Map<String, Object> outputMap = (java.util.Map<String, Object>) outputObject;
             
-            logger.debug("Output object keys: {}", outputMap.keySet());
+            logger.debug("Output is Map with keys: {}", outputMap.keySet());
             
-            // Try different possible field names
+            // Try different possible field names - 'text' should be the main field for output_text type
             Object textObject = outputMap.get("text");
             if (textObject == null) {
                 textObject = outputMap.get("message");
@@ -148,19 +161,42 @@ public class OpenAIService {
             }
             
             if (textObject == null) {
-                logger.error("Output map structure: {}", outputMap);
+                logger.error("Could not find text field in output map: {}", outputMap);
                 throw new OpenAIException("OpenAI API response object does not contain expected text field. Available fields: " + outputMap.keySet());
             }
-            content = textObject.toString();
+            
+            logger.debug("Extracted text object type: {}, value: {}", textObject.getClass().getSimpleName(), textObject);
+            
+            // Ensure we get the string value, not the object representation
+            if (textObject instanceof String) {
+                content = (String) textObject;
+            } else {
+                content = textObject.toString();
+            }
         } else {
+            logger.warn("Output is unexpected type: {}", outputObject.getClass().getName());
             content = outputObject.toString();
+        }
+
+        // Safety check: if we somehow got the full object representation, extract just the text
+        if (content != null && content.startsWith("[{")) {
+            logger.warn("Content appears to be object representation, extracting text field: {}", content);
+            // Try to extract text from pattern like [{...text=Hello...}]
+            int textStart = content.indexOf("text=");
+            if (textStart != -1) {
+                int textEnd = content.indexOf('}', textStart);
+                if (textEnd != -1) {
+                    content = content.substring(textStart + 5, textEnd).trim();
+                    logger.info("Extracted text from object representation: {}", content);
+                }
+            }
         }
 
         if (content == null || content.trim().isEmpty()) {
             throw new OpenAIException("OpenAI API returned empty message content");
         }
 
-        logger.info("Successfully received response from OpenAI API");
+        logger.info("Successfully extracted response content: {}", content);
         return content.trim();
     }
 
