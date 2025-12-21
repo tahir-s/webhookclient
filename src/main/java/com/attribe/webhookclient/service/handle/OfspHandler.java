@@ -3,6 +3,7 @@ package com.attribe.webhookclient.service.handle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.attribe.webhookclient.pojo.client.MessageDTO;
@@ -19,6 +20,10 @@ import com.attribe.webhookclient.service.openai.OpenAIService;
 public class OfspHandler implements  ClientHandle{
     private static final Logger logger = LoggerFactory.getLogger(OfspHandler.class);
 
+
+    @Value("${whatsapp.menu.button.chat-agent}")
+    private String buttonChatAgent;
+    
 	@Autowired
 	private WhatsAppSendMessageService messageService;
 
@@ -39,11 +44,40 @@ public class OfspHandler implements  ClientHandle{
             String type =  message.getType()+"";
             String button_id = "";
             
+            //Text message handlling
             if(Constant.MessageType.test.equals(type)){
                 commandRecived =  message.getText() != null ? message.getText().getBody() : "";
+                commandRecived = commandRecived.toLowerCase();
+            
+                //Quit from agent chat
+                if(commandRecived.equalsIgnoreCase("q")){
+                    Constant.UserChatChache.cache.remove(message.getFrom());
+                }
+
+                //Keep chating with agent
+                String isChantExsit = Constant.UserChatChache.cache.get(message.getFrom());
+                if(isChantExsit!=null && isChantExsit.equals("chat_agent")){
+                    commandRecived = "chat_agent";
+                }
+                
+
+             
             }
+
+            //intractive message handlling
             else if(Constant.MessageType.interactive.equals(type)){
                 commandRecived= getButtonId(metadata, message);
+
+                if("chat_agent".equals(commandRecived)){
+
+                   // Constant.UserChatChache.cache.put(message.getFrom(), "chat_agent");
+                   Constant.UserChatChache.cache.put(message.getFrom(), "chat_agent");
+                    commandRecived = "chat_agent";
+                }
+                else{
+                    Constant.UserChatChache.cache.remove(message.getFrom());
+
+                }
             }
 
            System.out.println("Command Recived:---------- "+ commandRecived);
