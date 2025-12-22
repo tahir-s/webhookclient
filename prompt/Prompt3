@@ -1,9 +1,11 @@
 Role:
-You are a Senior Java Backend Engineer working on an enterprise Spring Boot application.
-You are responsible for designing and implementing a short-term conversation memory system for an OpenAI-based chat agent using Redis.
+You are a Senior Java Backend Engineer working on an existing enterprise Spring Boot application.
+You are extending an already running WhatsApp + OpenAI integration.
+Do NOT refactor unrelated code.
 
 Objective:
-Implement an OpenAI-style short-term conversation that stores and retrieves user conversation context from Redis, allowing contextual responses while keeping memory limited and time-bound.
+Implement a short-term conversation memory system (OpenAI-style) using Redis,
+allowing contextual responses while keeping memory limited, time-bound, and lightweight.
 
 Functional Requirements:
 
@@ -11,46 +13,67 @@ Functional Requirements:
 - Store only the last 20 user prompts per user.
 - Use Redis as the backing store.
 - Identify the user using message.getFrom().
-- Set a TTL of 15 minutes per user conversation key.
-- After TTL expiry, Redis should automatically remove the conversation history.
+- Redis key format:
+  chat:short_term:{message.getFrom()}
+- Example:
+  chat:short_term: 923001234567
+- Store each prompt as a plain string (no JSON, no role metadata).
+- Set TTL to 15 minutes.
+- TTL must be refreshed on every new prompt.
+- Redis must automatically expire data after TTL.
 
 2. Persistence Logic
-In class: OfspHandler
-Inside method: handleInbondMessage(...)
+Class: OfspHandler
+Method: handleInbondMessage(...)
 
-- When the user selects the menu option "chat_agent":
-  - Persist the user prompt into Redis.
-  - Maintain FIFO behavior (remove oldest prompt if count exceeds 20).
-  - Ensure Redis write happens only for chat_agent flow.
+- Only when the user selects menu option "chat_agent":
+  - Persist the user prompt to Redis.
+  - Maintain FIFO behavior (remove oldest if size exceeds 20).
+  - Use Redis List operations (RPUSH + LTRIM).
+  - Do not write to Redis for any other menu option.
 
 3. Conversation Retrieval & OpenAI Integration
-In class: OfspHandler
-Inside method: sendChatAgentMessage(...)
+Class: OfspHandler
+Method: sendChatAgentMessage(...)
 
-- Retrieve stored prompts from Redis using message.getFrom() as key.
-- Build conversation context by concatenating the last prompts in correct order.
-- Append the current user message.
-- Send the complete contextual prompt to:
+- Retrieve stored prompts from Redis using message.getFrom().
+- Build conversation context in strict chronological order (oldest → newest).
+- Format context as:
+  User: <message1>
+  User: <message2>
+  ...
+  User: <currentMessage>
+- Append the current user message at the end.
+- Send the final combined prompt to:
   openAIService.getResponse(userMessageWithContext)
 
+4. Failure Handling
+- Redis failures must NOT crash the flow.
+- If Redis is unavailable or throws any exception:
+  - Log the error
+  - Proceed by calling OpenAI with only the current user message
+  - Do not propagate Redis exceptions
+
 Technical Constraints:
-- Use Spring Boot best practices.
-- Use Redis List (LPUSH/RPUSH + LTRIM).
-- Ensure thread safety and null safety.
-- Redis failures must not crash the flow.
+- Follow Spring Boot best practices.
+- Use Redis List (RPUSH + LTRIM).
+- Avoid unnecessary synchronization (Redis operations are atomic).
+- Ensure null safety.
+- Keep implementation minimal and focused.
 
 Output Expectations:
 - Explain overall design approach.
-- Suggest Redis key structure.
+- Show Redis key structure.
 - Provide Java-level pseudo-code or sample methods.
-- Clearly show how short-term memory is achieved.
+- Clearly explain how short-term memory and TTL are achieved.
 
 Non-Goals:
 - No long-term memory
 - No database persistence
 - No embeddings or vector search
+- No refactoring of unrelated code
 
 Success Criteria:
-- Contextual conversation
+- Contextual conversation support
 - Automatic expiry after 15 minutes
-- Lightweight and scalable system
+- Lightweight, scalable, production-safe solution
