@@ -19,7 +19,7 @@ public class ConversationMemoryService {
     
     private static final String KEY_PREFIX = "chat:short_term:";
     private static final int MAX_PROMPTS = 20;
-    private static final long TTL_MINUTES = 15;
+    private static final long TTL_MINUTES = 2;
     
     @Autowired(required = false)
     private RedisTemplate<String, String> redisTemplate;
