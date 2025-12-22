@@ -11,6 +11,7 @@ import com.attribe.webhookclient.pojo.whatsapp.Interactive;
 import com.attribe.webhookclient.pojo.whatsapp.Message;
 import com.attribe.webhookclient.pojo.whatsapp.Metadata;
 import com.attribe.webhookclient.service.Constant;
+import com.attribe.webhookclient.service.ConversationMemoryService;
 import com.attribe.webhookclient.service.WhatsAppSendMenuService;
 import com.attribe.webhookclient.service.WhatsAppSendMessageService;
 import com.attribe.webhookclient.service.openai.OpenAIException;
@@ -32,6 +33,9 @@ public class OfspHandler implements  ClientHandle{
 
     @Autowired
     private OpenAIService openAIService;
+    
+    @Autowired(required = false)
+    private ConversationMemoryService conversationMemoryService;
 
 
     @Override
@@ -93,6 +97,12 @@ public class OfspHandler implements  ClientHandle{
                 sendListLatestNewsMessage(metadata, message);
                 break;
             case "chat_agent": // Chat Agent
+                // Store the user prompt in Redis for conversation memory
+                String userPrompt = message.getText() != null ? message.getText().getBody() : "";
+                if (conversationMemoryService != null && !userPrompt.isEmpty()) {
+                    conversationMemoryService.storePrompt(message.getFrom(), userPrompt);
+                    logger.info("Stored user prompt in conversation memory for: {}", message.getFrom());
+                }
                 sendChatAgentMessage(metadata, message);
                 break;
             case "m": // Send Menu
@@ -181,9 +191,12 @@ public class OfspHandler implements  ClientHandle{
 			String userMessage = message.getText() != null ? message.getText().getBody() : "Hello";
 			logger.info("Processing chat agent request from: {} with message: {}", message.getFrom(), userMessage);
 			
+			// Build conversation context from Redis
+			String conversationContext = buildConversationContext(message.getFrom(), userMessage);
+			
 			try {
-				// Get response from OpenAI API
-				String aiResponse = openAIService.getResponse(userMessage);
+				// Get response from OpenAI API with conversation context
+				String aiResponse = openAIService.getResponse(conversationContext);
 				messageDto.setBody(aiResponse);
 				logger.info("Successfully received response from OpenAI API");
 			} catch (OpenAIException e) {
@@ -196,6 +209,44 @@ public class OfspHandler implements  ClientHandle{
 			logger.error("Error in sendChatAgentMessage: {}", e.getMessage(), e);
         }
 
+    }
+    
+    /**
+     * Build conversation context from stored prompts and the current message.
+     * Format: User: <message1>\nUser: <message2>\n...\nUser: <currentMessage>
+     * 
+     * @param userId The user ID
+     * @param currentMessage The current user message
+     * @return The formatted conversation context
+     */
+    private String buildConversationContext(String userId, String currentMessage) {
+        StringBuilder context = new StringBuilder();
+        
+        try {
+            // Retrieve stored prompts from Redis
+            if (conversationMemoryService != null) {
+                java.util.List<String> storedPrompts = conversationMemoryService.getPrompts(userId);
+                
+                // Build context from previous prompts
+                for (String prompt : storedPrompts) {
+                    if (prompt != null && !prompt.isEmpty()) {
+                        context.append("User: ").append(prompt).append("\n");
+                    }
+                }
+                
+                if (!storedPrompts.isEmpty()) {
+                    logger.info("Retrieved {} previous prompts for user: {}", storedPrompts.size(), userId);
+                }
+            }
+        } catch (Exception e) {
+            // Fail gracefully - just use current message if Redis fails
+            logger.error("Failed to retrieve conversation context for user: {}, using current message only", userId, e);
+        }
+        
+        // Append current message
+        context.append("User: ").append(currentMessage);
+        
+        return context.toString();
     }
 
 
