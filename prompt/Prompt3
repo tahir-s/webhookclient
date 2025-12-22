@@ -77,3 +77,54 @@ Success Criteria:
 - Contextual conversation support
 - Automatic expiry after 15 minutes
 - Lightweight, scalable, production-safe solution
+
+
+
+==============================================================
+Role:
+You are a Senior Java Backend Engineer working on an existing enterprise Spring Boot application.
+You are extending an already running WhatsApp + OpenAI integration.
+Do NOT refactor unrelated code.
+
+Objective
+
+Create a separate, reusable method responsible for sending OpenAI responses to WhatsApp users.
+
+Functional Requirements
+1. OpenAI Response Sender Method
+Class:
+WhatsAppSendMessageService
+
+Method:
+sendOpenAiMessage(...)
+
+Responsibilities:
+
+This method is solely responsible for sending the OpenAI-generated response to the user via WhatsApp.
+The WhatsApp message must include a footer with the text:
+Reply E to end the chat.
+
+
+The footer text MUST be read from application.properties.
+Footer value should be injected using:
+@Value, or a dedicated @ConfigurationProperties class.
+No hardcoding of footer text anywhere in the codebase.
+
+2. Usage from Chat Agent Flow
+Class:
+OfspHandler
+
+Method:
+sendChatAgentMessage(...)
+
+Required Change:
+Use:
+
+WhatsAppSendMessageService.sendOpenAiMessage(...)
+Do not modify OpenAI request logic.
+Ensure the OpenAI response is passed cleanly to this method.
+
+3. Configuration Requirement
+application.properties
+
+whatsapp.chat.footer=Reply *E* to end the chat.

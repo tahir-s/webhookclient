@@ -184,9 +184,6 @@ public class OfspHandler implements  ClientHandle{
     private void sendChatAgentMessage(Metadata metadata, Message message) {
 
 		try {
-			MessageDTO messageDto = new MessageDTO();
-			messageDto.setTo(message.getFrom());
-			
 			// Get user message from text
 			String userMessage = message.getText() != null ? message.getText().getBody() : "Hello";
 			logger.info("Processing chat agent request from: {} with message: {}", message.getFrom(), userMessage);
@@ -197,14 +194,15 @@ public class OfspHandler implements  ClientHandle{
 			try {
 				// Get response from OpenAI API with conversation context
 				String aiResponse = openAIService.getResponse(conversationContext);
-				messageDto.setBody(aiResponse);
 				logger.info("Successfully received response from OpenAI API");
+				
+				// Send OpenAI response to WhatsApp user with footer
+				messageService.sendOpenAiMessage(metadata.getPhone_number_id(), message.getFrom(), aiResponse);
 			} catch (OpenAIException e) {
 				logger.error("OpenAI API error: {}", e.getMessage(), e);
-				messageDto.setBody("I apologize, I'm temporarily unavailable. Please try again later.");
+				String errorMessage = "I apologize, I'm temporarily unavailable. Please try again later.";
+				messageService.sendOpenAiMessage(metadata.getPhone_number_id(), message.getFrom(), errorMessage);
 			}
-			
-			messageService.sendMessage(metadata.getPhone_number_id(), messageDto);
 		} catch (Exception e) {
 			logger.error("Error in sendChatAgentMessage: {}", e.getMessage(), e);
         }
