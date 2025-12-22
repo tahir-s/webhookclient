@@ -1,0 +1,56 @@
+Role:
+You are a Senior Java Backend Engineer working on an enterprise Spring Boot application.
+You are responsible for designing and implementing a short-term conversation memory system for an OpenAI-based chat agent using Redis.
+
+Objective:
+Implement an OpenAI-style short-term conversation that stores and retrieves user conversation context from Redis, allowing contextual responses while keeping memory limited and time-bound.
+
+Functional Requirements:
+
+1. Prompt Storage (Redis)
+- Store only the last 20 user prompts per user.
+- Use Redis as the backing store.
+- Identify the user using message.getFrom().
+- Set a TTL of 15 minutes per user conversation key.
+- After TTL expiry, Redis should automatically remove the conversation history.
+
+2. Persistence Logic
+In class: OfspHandler
+Inside method: handleInbondMessage(...)
+
+- When the user selects the menu option "chat_agent":
+  - Persist the user prompt into Redis.
+  - Maintain FIFO behavior (remove oldest prompt if count exceeds 20).
+  - Ensure Redis write happens only for chat_agent flow.
+
+3. Conversation Retrieval & OpenAI Integration
+In class: OfspHandler
+Inside method: sendChatAgentMessage(...)
+
+- Retrieve stored prompts from Redis using message.getFrom() as key.
+- Build conversation context by concatenating the last prompts in correct order.
+- Append the current user message.
+- Send the complete contextual prompt to:
+  openAIService.getResponse(userMessageWithContext)
+
+Technical Constraints:
+- Use Spring Boot best practices.
+- Use Redis List (LPUSH/RPUSH + LTRIM).
+- Ensure thread safety and null safety.
+- Redis failures must not crash the flow.
+
+Output Expectations:
+- Explain overall design approach.
+- Suggest Redis key structure.
+- Provide Java-level pseudo-code or sample methods.
+- Clearly show how short-term memory is achieved.
+
+Non-Goals:
+- No long-term memory
+- No database persistence
+- No embeddings or vector search
+
+Success Criteria:
+- Contextual conversation
+- Automatic expiry after 15 minutes
+- Lightweight and scalable system
