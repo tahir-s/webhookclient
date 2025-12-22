@@ -54,7 +54,7 @@ public class OfspHandler implements  ClientHandle{
                 commandRecived = commandRecived.toLowerCase();
             
                 //Quit from agent chat
-                if(commandRecived.equalsIgnoreCase("q")){
+                if(commandRecived.equalsIgnoreCase("e")){
                     Constant.UserChatChache.cache.remove(message.getFrom());
                 }
 
