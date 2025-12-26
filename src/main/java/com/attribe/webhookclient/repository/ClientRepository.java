@@ -10,5 +10,7 @@ import com.attribe.webhookclient.entity.Client;
 public interface ClientRepository extends JpaRepository<Client, Long> {
 	
 	Optional<Client> findByClientId(String email);
+	
+	Optional<Client> findByPhoneNumberId(String phoneNumberId);
 
 }

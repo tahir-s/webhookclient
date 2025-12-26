@@ -1,15 +1,19 @@
 package com.attribe.webhookclient.service.handle;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.attribe.webhookclient.entity.Client;
 import com.attribe.webhookclient.pojo.client.MessageDTO;
 import com.attribe.webhookclient.pojo.whatsapp.Interactive;
 import com.attribe.webhookclient.pojo.whatsapp.Message;
 import com.attribe.webhookclient.pojo.whatsapp.Metadata;
+import com.attribe.webhookclient.repository.ClientRepository;
 import com.attribe.webhookclient.service.Constant;
 import com.attribe.webhookclient.service.ConversationMemoryService;
 import com.attribe.webhookclient.service.WhatsAppSendMenuService;
@@ -33,6 +37,9 @@ public class OfspHandler implements  ClientHandle{
 
     @Autowired
     private OpenAIService openAIService;
+    
+    @Autowired
+    private ClientRepository clientRepository;
     
     @Autowired(required = false)
     private ConversationMemoryService conversationMemoryService;
@@ -191,9 +198,29 @@ public class OfspHandler implements  ClientHandle{
 			// Build conversation context from Redis
 			String conversationContext = buildConversationContext(message.getFrom(), userMessage);
 			
+			// [NEW] Fetch Client by phone number ID and prepend chatPrefix if available
+			String finalContext = conversationContext;
 			try {
-				// Get response from OpenAI API with conversation context
-				String aiResponse = openAIService.getResponse(conversationContext);
+				Optional<Client> clientOptional = clientRepository.findByPhoneNumberId(metadata.getPhone_number_id());
+				if (clientOptional.isPresent()) {
+					Client client = clientOptional.get();
+					String chatPrefix = client.getChatPrefix();
+					
+					// Prepend chatPrefix to conversation context if it exists and is not empty
+					if (chatPrefix != null && !chatPrefix.trim().isEmpty()) {
+						finalContext = chatPrefix + "\n\n" + conversationContext;
+
+                        logger.debug(" ---> finalContext"  , finalContext);
+						logger.debug("Prepended chatPrefix for client: {}", metadata.getPhone_number_id());
+					}
+				}
+			} catch (Exception e) {
+				logger.warn("Failed to fetch chatPrefix for client: {}, proceeding with original context", metadata.getPhone_number_id(), e);
+			}
+			
+			try {
+				// Get response from OpenAI API with conversation context (and optional prefix)
+				String aiResponse = openAIService.getResponse(finalContext);
 				logger.info("Successfully received response from OpenAI API");
 				
 				// Send OpenAI response to WhatsApp user with footer

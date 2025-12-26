@@ -128,3 +128,34 @@ Ensure the OpenAI response is passed cleanly to this method.
 application.properties
 
 whatsapp.chat.footer=Reply *E* to end the chat.
+
+
+==============================================================
+
+Role: You are a Senior Java Backend Engineer working on an existing
+enterprise Spring Boot application.
+
+Context: The application already has a working WhatsApp + OpenAI
+integration. You must extend existing behavior only and must NOT
+refactor or change unrelated code.
+
+Objective: Enhance the OpenAI request so that a prefix message is always
+prepended to the user prompt.
+
+Functional Requirements: 1. Fetch the prefix message from: - chatPrefix
+field in the Client class 2. Prepend this prefix to the OpenAI request
+message 3. Apply the change only in the specified method
+
+Implementation Constraints: - Class to modify: OfspHandler - Method to
+update: sendOpenAiMessage(…) - Do NOT: - Rename classes or methods -
+Change method signatures - Refactor existing logic unrelated to this
+requirement - Introduce new frameworks or architectural changes
+
+Expected Behavior: - When sendOpenAiMessage(…) is invoked: - Retrieve
+chatPrefix from the associated Client object - Prepend it to the OpenAI
+prompt - Send the combined message to OpenAI - If chatPrefix is null or
+empty: - Proceed with the original message unchanged
+
+Output Required: - Provide only the updated Java code for the modified
+method - Clearly highlight or comment the newly added lines - Assume all
+required objects already exist and are accessible
