@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.attribe.webhookclient.entity.Client;
-import com.attribe.webhookclient.pojo.client.MessageDTO;
 import com.attribe.webhookclient.pojo.whatsapp.Message;
 import com.attribe.webhookclient.pojo.whatsapp.Metadata;
 import com.attribe.webhookclient.repository.ClientRepository;
@@ -38,6 +37,7 @@ public class DefaultHandler implements ClientHandle {
 	public void handleInbondMessage(Metadata metadata, Message message) {
 		try {
 			// Get user message from text
+			logger.debug("------------------------------------------- [Agentic-AI Default]");
 			String userMessage = message.getText() != null ? message.getText().getBody() : "Hello";
 			logger.info("Processing default handler request from: {} with message: {}", message.getFrom(), userMessage);
 			
@@ -71,7 +71,8 @@ public class DefaultHandler implements ClientHandle {
 			try {
 				// Get response from OpenAI API with conversation context
 				String aiResponse = openAIService.getResponse(finalContext);
-				logger.info("Successfully received response from OpenAI API");
+				logger.info("Request Text  for OpenAI API with finalContext :" + finalContext);
+				logger.info("Successfully received response from OpenAI API :" +aiResponse);
 				
 				// Send OpenAI response to WhatsApp user with footer
 				messageService.sendOpenAiMessage(metadata.getPhone_number_id(), message.getFrom(), aiResponse);
