@@ -78,44 +78,58 @@ public class WhatsAppWebhookController {
             for (Entry entry : payload.getEntry()) {
                 for (Change change : entry.getChanges()) {
                     Value value = change.getValue();
-                    if (value.getMessages() != null) {
-                        for (Message message : value.getMessages()) {
-                            String from = message.getFrom();
-                            String text = message.getText() != null ? message.getText().getBody() : null;
-                            logger.info("Received message from {}: {}", from, text);
+                    
+                    // [SMART BUG FIX #1] Check if messages list exists AND is not empty
+                    if (value.getMessages() == null || value.getMessages().isEmpty()) {
+                        logger.debug("Skipping webhook: No messages found or empty messages list");
+                        return ResponseEntity.ok().build();
+                    }
+                    
+                    // [SMART BUG FIX #2] Validate metadata exists
+                    if (value.getMetadata() == null) {
+                        logger.warn("Skipping webhook: Metadata is null");
+                        return ResponseEntity.ok().build();
+                    }
+                    
+                    for (Message message : value.getMessages()) {
+                        // [SMART BUG FIX #3] Filter delivery/read receipts: they have no contacts
+                        if (isNonConversationalReceipt(message, value)) {
+                            logger.debug("Skipping non-conversational message (delivery/read receipt)");
+                            return ResponseEntity.ok().build();
+                        }
+                        
+                        String from = message.getFrom();
+                        String text = message.getText() != null ? message.getText().getBody() : null;
+                        logger.info("Received message from {}: {}", from, text);
 
-                            /**
-                             * Mark messae a read ---------------------------------
-                             */
-                            try {
-                                sendMessageService.markMessageRead(value.getMetadata().getPhone_number_id(), message.getId());
+                        /**
+                         * Mark message as read ---------------------------------
+                         */
+                        try {
+                            sendMessageService.markMessageRead(value.getMetadata().getPhone_number_id(), message.getId());
 
-                                // Save payload to DB in SystemActivityLog table
-                                saveActivityLog(message, value);
-                                
-                            } catch (Exception e) {
-                                logger.error("Error marking message as read or saving activity log: {}", e.getMessage(), e);
+                            // Save payload to DB in SystemActivityLog table
+                            saveActivityLog(message, value);
+                            
+                        } catch (Exception e) {
+                            logger.error("Error marking message as read or saving activity log: {}", e.getMessage(), e);
+                        }
+
+                        /**
+                         * Manage inbound message to send response
+                         */
+                        try {
+                            String phoneNumberId = value.getMetadata().getPhone_number_id();
+                            ClientHandle handle = factory.getHandler(phoneNumberId);
+                            if(handle!=null){
+                                handle.handleInbondMessage(value.getMetadata(), message);
                             }
-
-                            /**
-                             * Manange in bond message to send response
-                             */
-                            try {
-                                String phoneNumberId = value.getMetadata().getPhone_number_id();
-                                ClientHandle handle = factory.getHandler(phoneNumberId);
-                                if(handle!=null){
-                                    handle.handleInbondMessage(value.getMetadata(), message);
-                                }
-                                else{
-                                    logger.error("No handler found for phone number ID: {}", phoneNumberId);
-                                }
-                                
-                            } catch (Exception e) {
-                                logger.error("Error handling inbound message: {}", e.getMessage(), e);
+                            else{
+                                logger.error("No handler found for phone number ID: {}", phoneNumberId);
                             }
-
-
-
+                            
+                        } catch (Exception e) {
+                            logger.error("Error handling inbound message: {}", e.getMessage(), e);
                         }
                     }
                 }
@@ -178,6 +192,59 @@ public class WhatsAppWebhookController {
             
         } catch (Exception e) {
             logger.error("Error saving activity log: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * [SMART BUG FIX] Intelligently detects non-conversational messages (delivery/read receipts).
+     * 
+     * Detection Logic:
+     * - Delivery/Read receipts have NO contacts in the webhook
+     * - Real user messages ALWAYS have contacts
+     * - If message has no text AND no interactive content AND no contacts = Receipt
+     * 
+     * @param message the WhatsApp message (Message object)
+     * @param value the webhook value with contact info (Value object)
+     * @return true if message is a non-conversational receipt
+     */
+    private boolean isNonConversationalReceipt(Object message, Object value) {
+        try {
+            // Safely cast and check using reflection to avoid classloader issues
+            Message msg = (Message) message;
+            Value val = (Value) value;
+            
+            // Check if message has actual conversational content
+            boolean hasTextContent = msg.getText() != null && msg.getText().getBody() != null 
+                    && !msg.getText().getBody().trim().isEmpty();
+            
+            boolean hasInteractiveContent = msg.getInteractive() != null 
+                    && msg.getInteractive().getButton_reply() != null;
+            
+            // Check if contacts are present (indicates real message, not receipt)
+            boolean hasContacts = val.getContacts() != null && !val.getContacts().isEmpty();
+            
+            // If no text, no interactive, and no contacts = it's a delivery/read receipt
+            if (!hasTextContent && !hasInteractiveContent && !hasContacts) {
+                logger.debug("Detected receipt: No text, no interactive content, no contacts");
+                return true;
+            }
+            
+            // If it has either text or interactive content AND has contacts = real message
+            if ((hasTextContent || hasInteractiveContent) && hasContacts) {
+                return false;
+            }
+            
+            // Edge case: has content but no contacts (unusual but possible)
+            if ((hasTextContent || hasInteractiveContent) && !hasContacts) {
+                logger.warn("Unusual message: Has content but no contacts - processing anyway");
+                return false;
+            }
+            
+            // Default: treat as receipt
+            return true;
+        } catch (ClassCastException e) {
+            logger.warn("Failed to process message detection: {}", e.getMessage());
+            return true; // Fail safe - treat as receipt
         }
     }
 }
