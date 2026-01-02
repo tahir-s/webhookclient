@@ -73,7 +73,7 @@ public class WhatsAppWebhookController {
     		return ResponseEntity.badRequest().build();
     	}
     	
-    	logger.info("Received Webhook Event: {}", payload.toString());
+    	//logger.info("Received Webhook Event: {}", payload.toString());
         if ("whatsapp_business_account".equals(payload.getObject())) {
             for (Entry entry : payload.getEntry()) {
                 for (Change change : entry.getChanges()) {
